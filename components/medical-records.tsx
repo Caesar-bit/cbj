@@ -49,6 +49,45 @@ export function MedicalRecords() {
   const [isViewDialogOpen, setIsViewDialogOpen] = useState(false)
   const [currentView, setCurrentView] = useState<"records" | "prescriptions">("records")
 
+  useEffect(() => {
+    const fetchRecords = async () => {
+      try {
+        const res = await fetch(`${API_BASE}/records`)
+        if (res.ok) {
+          const data = await res.json()
+          setRecords(
+            data.map((r: any) => ({
+              id: r.id ?? "",
+              patientId: r.patientId ?? "",
+              patientName: "",
+              doctorId: "",
+              doctorName: "",
+              appointmentId: undefined,
+              date: r.createdAt ?? new Date().toISOString(),
+              type: "diagnosis",
+              title: "",
+              description: r.notes ?? "",
+              diagnosis: undefined,
+              symptoms: [],
+              treatment: undefined,
+              medications: [],
+              labResults: [],
+              attachments: [],
+              followUpRequired: false,
+              followUpDate: undefined,
+              status: "active",
+              createdAt: r.createdAt ?? new Date().toISOString(),
+              updatedAt: r.createdAt ?? new Date().toISOString(),
+            }))
+          )
+        }
+      } catch (err) {
+        console.error(err)
+      }
+    }
+    fetchRecords()
+  }, [])
+
   const filteredRecords = useMemo(() => {
     return records.filter((record) => {
       const matchesSearch =
@@ -138,15 +177,32 @@ export function MedicalRecords() {
     }
   }
 
-  const handleAddRecord = (newRecord: Omit<MedicalRecord, "id" | "createdAt" | "updatedAt">) => {
-    const record: MedicalRecord = {
-      ...newRecord,
-      id: `MR${String(records.length + 1).padStart(3, "0")}`,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
+  const handleAddRecord = async (
+    newRecord: Omit<MedicalRecord, "id" | "createdAt" | "updatedAt">,
+  ) => {
+    try {
+      const res = await fetch(`${API_BASE}/records`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          patientId: newRecord.patientId,
+          notes: newRecord.description,
+        }),
+      })
+      if (res.ok) {
+        const saved = await res.json()
+        const record: MedicalRecord = {
+          ...newRecord,
+          id: saved.id,
+          createdAt: saved.createdAt ?? new Date().toISOString(),
+          updatedAt: saved.createdAt ?? new Date().toISOString(),
+        }
+        setRecords([...records, record])
+        setIsAddDialogOpen(false)
+      }
+    } catch (err) {
+      console.error(err)
     }
-    setRecords([...records, record])
-    setIsAddDialogOpen(false)
   }
 
   const handleUpdateRecord = (updatedRecord: MedicalRecord) => {
@@ -497,16 +553,59 @@ function AddMedicalRecordForm({
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const [recRes, patRes, docRes] = await Promise.all([
-          fetch(`${API_BASE}/records`),
+        const [patRes, docRes] = await Promise.all([
           fetch(`${API_BASE}/patients`),
           fetch(`${API_BASE}/staff`),
         ])
-        if (recRes.ok) setRecords(await recRes.json())
-        if (patRes.ok) setPatients(await patRes.json())
+        if (patRes.ok) {
+          const pData = await patRes.json()
+          setPatients(
+            pData.map((p: any) => ({
+              id: p.id ?? "",
+              name: p.name ?? "",
+              age: p.dateOfBirth
+                ? new Date().getFullYear() - new Date(p.dateOfBirth).getFullYear()
+                : 0,
+              gender: "other",
+              contact: "",
+              email: "",
+              address: "",
+              emergencyContact: "",
+              status: "active",
+              admissionDate: undefined,
+              department: "",
+              assignedDoctor: "",
+              medicalHistory: [],
+              allergies: [],
+              bloodType: "",
+              insurance: "",
+            }))
+          )
+        }
         if (docRes.ok) {
           const allStaff: Staff[] = await docRes.json()
-          setDoctors(allStaff.filter((s) => s.role === "doctor"))
+          setDoctors(
+            allStaff
+              .filter((s) => s.role === "doctor")
+              .map((s: any) => ({
+                id: s.id ?? "",
+                name: s.name ?? "",
+                email: "",
+                phone: "",
+                role: s.role ?? "doctor",
+                department: "",
+                specialization: undefined,
+                licenseNumber: undefined,
+                hireDate: new Date().toISOString(),
+                status: "active",
+                shift: undefined,
+                address: "",
+                emergencyContact: "",
+                qualifications: [],
+                experience: undefined,
+                salary: undefined,
+              }))
+          )
         }
       } catch (err) {
         console.error(err)

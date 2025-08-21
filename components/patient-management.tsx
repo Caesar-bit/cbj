@@ -47,7 +47,29 @@ export function PatientManagement() {
       try {
         const res = await fetch(`${API_BASE}/patients`)
         if (res.ok) {
-          setPatients(await res.json())
+          const data = await res.json()
+          setPatients(
+            data.map((p: any) => ({
+              id: p.id ?? "",
+              name: p.name ?? "",
+              age: p.dateOfBirth
+                ? new Date().getFullYear() - new Date(p.dateOfBirth).getFullYear()
+                : 0,
+              gender: "other",
+              contact: "",
+              email: "",
+              address: "",
+              emergencyContact: "",
+              status: "active",
+              admissionDate: undefined,
+              department: "",
+              assignedDoctor: "",
+              medicalHistory: [],
+              allergies: [],
+              bloodType: "",
+              insurance: "",
+            }))
+          )
         }
       } catch (err) {
         console.error(err)
@@ -71,13 +93,24 @@ export function PatientManagement() {
     }
   }
 
-  const handleAddPatient = (newPatient: Omit<Patient, "id">) => {
-    const patient: Patient = {
-      ...newPatient,
-      id: `P${String(patients.length + 1).padStart(3, "0")}`,
+  const handleAddPatient = async (newPatient: Omit<Patient, "id">) => {
+    const dob = new Date()
+    dob.setFullYear(dob.getFullYear() - newPatient.age)
+    try {
+      const res = await fetch(`${API_BASE}/patients`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name: newPatient.name, dateOfBirth: dob.toISOString() }),
+      })
+      if (res.ok) {
+        const saved = await res.json()
+        const patient: Patient = { ...newPatient, id: saved.id }
+        setPatients([...patients, patient])
+        setIsAddDialogOpen(false)
+      }
+    } catch (err) {
+      console.error(err)
     }
-    setPatients([...patients, patient])
-    setIsAddDialogOpen(false)
   }
 
   const handleUpdatePatient = (updatedPatient: Patient) => {

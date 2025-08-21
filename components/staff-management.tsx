@@ -50,7 +50,27 @@ export function StaffManagement() {
       try {
         const res = await fetch(`${API_BASE}/staff`)
         if (res.ok) {
-          setStaff(await res.json())
+          const data = await res.json()
+          setStaff(
+            data.map((s: any) => ({
+              id: s.id ?? "",
+              name: s.name ?? "",
+              email: "",
+              phone: "",
+              role: s.role ?? "doctor",
+              department: "",
+              specialization: undefined,
+              licenseNumber: undefined,
+              hireDate: new Date().toISOString(),
+              status: "active",
+              shift: undefined,
+              address: "",
+              emergencyContact: "",
+              qualifications: [],
+              experience: undefined,
+              salary: undefined,
+            }))
+          )
         }
       } catch (err) {
         console.error(err)
@@ -89,13 +109,22 @@ export function StaffManagement() {
     }
   }
 
-  const handleAddStaff = (newStaff: Omit<Staff, "id">) => {
-    const staffMember: Staff = {
-      ...newStaff,
-      id: `S${String(staff.length + 1).padStart(3, "0")}`,
+  const handleAddStaff = async (newStaff: Omit<Staff, "id">) => {
+    try {
+      const res = await fetch(`${API_BASE}/staff`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name: newStaff.name, role: newStaff.role }),
+      })
+      if (res.ok) {
+        const saved = await res.json()
+        const staffMember: Staff = { ...newStaff, id: saved.id }
+        setStaff([...staff, staffMember])
+        setIsAddDialogOpen(false)
+      }
+    } catch (err) {
+      console.error(err)
     }
-    setStaff([...staff, staffMember])
-    setIsAddDialogOpen(false)
   }
 
   const handleUpdateStaff = (updatedStaff: Staff) => {
