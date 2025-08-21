@@ -56,8 +56,12 @@ export function MedicalRecords() {
         const data = await res.json()
         setRecords(
           data.map((r: any) => ({
-            id: r.id ?? "",
-            patientId: r.patientId ?? "",
+            // Normalize IDs to strings with fallbacks to avoid duplicate React keys
+            id: r.id !== undefined && r.id !== null ? String(r.id) : crypto.randomUUID(),
+            patientId:
+              r.patientId !== undefined && r.patientId !== null
+                ? String(r.patientId)
+                : crypto.randomUUID(),
             patientName: "",
             doctorId: "",
             doctorName: "",
@@ -555,7 +559,7 @@ function AddMedicalRecordForm({
           const pData = await patRes.json()
           setPatients(
             pData.map((p: any) => ({
-              id: p.id ?? "",
+              id: p.id !== undefined && p.id !== null ? String(p.id) : crypto.randomUUID(),
               name: p.name ?? "",
               age: p.dateOfBirth
                 ? new Date().getFullYear() - new Date(p.dateOfBirth).getFullYear()
@@ -582,7 +586,7 @@ function AddMedicalRecordForm({
             allStaff
               .filter((s) => s.role === "doctor")
               .map((s: any) => ({
-                id: s.id ?? "",
+                id: s.id !== undefined && s.id !== null ? String(s.id) : crypto.randomUUID(),
                 name: s.name ?? "",
                 email: "",
                 phone: "",

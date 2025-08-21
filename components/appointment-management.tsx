@@ -55,10 +55,15 @@ export function AppointmentManagement() {
         const data = await res.json()
         setAppointments(
           data.map((a: any) => ({
-            id: a.id ?? "",
-            patientId: a.patientId ?? "",
+            // Normalize ids to strings and ensure uniqueness for React keys
+            id: a.id !== undefined && a.id !== null ? String(a.id) : crypto.randomUUID(),
+            patientId:
+              a.patientId !== undefined && a.patientId !== null
+                ? String(a.patientId)
+                : crypto.randomUUID(),
             patientName: "",
-            doctorId: a.staffId ?? "",
+            doctorId:
+              a.staffId !== undefined && a.staffId !== null ? String(a.staffId) : crypto.randomUUID(),
             doctorName: "",
             date: a.date ?? "",
             time: "",
@@ -470,7 +475,7 @@ function AddAppointmentForm({
           const pData = await patientsRes.json()
           setPatients(
             pData.map((p: any) => ({
-              id: p.id ?? "",
+              id: p.id !== undefined && p.id !== null ? String(p.id) : crypto.randomUUID(),
               name: p.name ?? "",
               age: p.dateOfBirth
                 ? new Date().getFullYear() - new Date(p.dateOfBirth).getFullYear()
@@ -497,7 +502,7 @@ function AddAppointmentForm({
             allStaff
               .filter((s) => s.role === "doctor")
               .map((s: any) => ({
-                id: s.id ?? "",
+                id: s.id !== undefined && s.id !== null ? String(s.id) : crypto.randomUUID(),
                 name: s.name ?? "",
                 email: "",
                 phone: "",

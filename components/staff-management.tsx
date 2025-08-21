@@ -37,7 +37,8 @@ export function StaffManagement() {
         const data = await res.json()
         setStaff(
           data.map((s: any) => ({
-            id: s.id ?? "",
+            // Convert numeric ids to strings and provide a fallback to keep keys unique
+            id: s.id !== undefined && s.id !== null ? String(s.id) : crypto.randomUUID(),
             name: s.name ?? "",
             email: "",
             phone: "",

@@ -36,7 +36,8 @@ export function PatientManagement() {
         const data = await res.json()
         setPatients(
           data.map((p: any) => ({
-            id: p.id ?? "",
+            // Ensure a stable string id so React list keys remain unique after refresh
+            id: p.id !== undefined && p.id !== null ? String(p.id) : crypto.randomUUID(),
             name: p.name ?? "",
             age: p.dateOfBirth
               ? new Date().getFullYear() - new Date(p.dateOfBirth).getFullYear()
