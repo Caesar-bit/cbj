@@ -461,12 +461,13 @@ function AddAppointmentForm({
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const [patRes, docRes] = await Promise.all([
+        // Only request patients and staff for the form; appointments are handled by the parent.
+        const [patientsRes, staffRes] = await Promise.all([
           fetch(`${API_BASE}/patients`),
           fetch(`${API_BASE}/staff`),
         ])
-        if (patRes.ok) {
-          const pData = await patRes.json()
+        if (patientsRes.ok) {
+          const pData = await patientsRes.json()
           setPatients(
             pData.map((p: any) => ({
               id: p.id ?? "",
@@ -490,8 +491,8 @@ function AddAppointmentForm({
             }))
           )
         }
-        if (docRes.ok) {
-          const allStaff: Staff[] = await docRes.json()
+        if (staffRes.ok) {
+          const allStaff: Staff[] = await staffRes.json()
           setDoctors(
             allStaff
               .filter((s) => s.role === "doctor")
