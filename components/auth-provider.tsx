@@ -3,7 +3,7 @@
 import { createContext, useContext, useState, useEffect, type ReactNode } from "react"
 import { API_BASE } from "@/lib/api"
 
-export type UserRole = "admin" | "doctor" | "nurse"
+export type UserRole = "admin" | "doctor" | "nurse" | "user"
 
 export interface User {
   id: string

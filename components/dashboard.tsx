@@ -119,7 +119,32 @@ export function Dashboard() {
           },
         ]
       default:
-        return []
+        return [
+          {
+            icon: Users,
+            label: "Add Patients",
+            description: "Manage patient records",
+            view: "patients" as DashboardView,
+          },
+          {
+            icon: User,
+            label: "Add Staff",
+            description: "Manage hospital staff",
+            view: "staff" as DashboardView,
+          },
+          {
+            icon: Calendar,
+            label: "Schedule Appointments",
+            description: "Manage appointments",
+            view: "appointments" as DashboardView,
+          },
+          {
+            icon: FileText,
+            label: "Add Records",
+            description: "Manage medical records",
+            view: "records" as DashboardView,
+          },
+        ]
     }
   }
 
