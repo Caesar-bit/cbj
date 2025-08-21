@@ -2,7 +2,7 @@
 
 import type React from "react"
 
-import { useState, useMemo, useEffect } from "react"
+import { useState, useMemo, useEffect, useCallback } from "react"
 import { API_BASE } from "@/lib/api"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -48,38 +48,39 @@ export function AppointmentManagement() {
   const [isViewDialogOpen, setIsViewDialogOpen] = useState(false)
   const [currentView, setCurrentView] = useState<"list" | "calendar">("list")
 
-  useEffect(() => {
-    const fetchAppointments = async () => {
-      try {
-        const res = await fetch(`${API_BASE}/appointments`)
-        if (res.ok) {
-          const data = await res.json()
-          setAppointments(
-            data.map((a: any) => ({
-              id: a.id ?? "",
-              patientId: a.patientId ?? "",
-              patientName: "",
-              doctorId: a.staffId ?? "",
-              doctorName: "",
-              date: a.date ?? "",
-              time: "",
-              duration: 30,
-              type: "consultation",
-              status: "scheduled",
-              department: "",
-              reason: "",
-              notes: "",
-              createdAt: new Date().toISOString(),
-              updatedAt: new Date().toISOString(),
-            }))
-          )
-        }
-      } catch (err) {
-        console.error(err)
+  const fetchAppointments = useCallback(async () => {
+    try {
+      const res = await fetch(`${API_BASE}/appointments`)
+      if (res.ok) {
+        const data = await res.json()
+        setAppointments(
+          data.map((a: any) => ({
+            id: a.id ?? "",
+            patientId: a.patientId ?? "",
+            patientName: "",
+            doctorId: a.staffId ?? "",
+            doctorName: "",
+            date: a.date ?? "",
+            time: "",
+            duration: 30,
+            type: "consultation",
+            status: "scheduled",
+            department: "",
+            reason: "",
+            notes: "",
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString(),
+          }))
+        )
       }
+    } catch (err) {
+      console.error(err)
     }
-    fetchAppointments()
   }, [])
+
+  useEffect(() => {
+    fetchAppointments()
+  }, [fetchAppointments])
 
   const filteredAppointments = useMemo(() => {
     return appointments.filter((appointment) => {
@@ -158,14 +159,7 @@ export function AppointmentManagement() {
         }),
       })
       if (res.ok) {
-        const saved = await res.json()
-        const appointment: Appointment = {
-          ...newAppointment,
-          id: saved.id,
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString(),
-        }
-        setAppointments([...appointments, appointment])
+        await fetchAppointments()
         setIsAddDialogOpen(false)
       }
     } catch (err) {
@@ -536,6 +530,21 @@ function AddAppointmentForm({
       return
     }
 
+    if (
+      !formData.patientId ||
+      !formData.doctorId ||
+      !formData.date ||
+      !formData.time ||
+      !formData.duration ||
+      !formData.type ||
+      !formData.status ||
+      !formData.reason ||
+      !formData.notes
+    ) {
+      alert("All fields are required")
+      return
+    }
+
     onSubmit({
       ...formData,
       duration: durationValue,
@@ -561,7 +570,7 @@ function AddAppointmentForm({
       <div className="grid grid-cols-2 gap-4">
         <div className="space-y-2">
           <Label htmlFor="patient">Patient *</Label>
-          <Select value={formData.patientId} onValueChange={handlePatientSelect}>
+          <Select value={formData.patientId} onValueChange={handlePatientSelect} required>
             <SelectTrigger>
               <SelectValue placeholder="Select patient" />
             </SelectTrigger>
@@ -576,7 +585,7 @@ function AddAppointmentForm({
         </div>
         <div className="space-y-2">
           <Label htmlFor="doctor">Doctor *</Label>
-          <Select value={formData.doctorId} onValueChange={handleDoctorSelect}>
+          <Select value={formData.doctorId} onValueChange={handleDoctorSelect} required>
             <SelectTrigger>
               <SelectValue placeholder="Select doctor" />
             </SelectTrigger>
@@ -614,7 +623,7 @@ function AddAppointmentForm({
         </div>
         <div className="space-y-2">
           <Label htmlFor="duration">Duration (min) *</Label>
-          <Select value={formData.duration} onValueChange={(value) => setFormData({ ...formData, duration: value })}>
+          <Select value={formData.duration} onValueChange={(value) => setFormData({ ...formData, duration: value })} required>
             <SelectTrigger>
               <SelectValue />
             </SelectTrigger>
@@ -636,6 +645,7 @@ function AddAppointmentForm({
           <Select
             value={formData.type}
             onValueChange={(value) => setFormData({ ...formData, type: value as AppointmentType })}
+            required
           >
             <SelectTrigger>
               <SelectValue placeholder="Select type" />
@@ -654,6 +664,7 @@ function AddAppointmentForm({
           <Select
             value={formData.status}
             onValueChange={(value) => setFormData({ ...formData, status: value as AppointmentStatus })}
+            required
           >
             <SelectTrigger>
               <SelectValue />
@@ -667,23 +678,25 @@ function AddAppointmentForm({
       </div>
 
       <div className="space-y-2">
-        <Label htmlFor="reason">Reason for Visit</Label>
+        <Label htmlFor="reason">Reason for Visit *</Label>
         <Input
           id="reason"
           value={formData.reason}
           onChange={(e) => setFormData({ ...formData, reason: e.target.value })}
           placeholder="Brief description of the appointment purpose"
+          required
         />
       </div>
 
       <div className="space-y-2">
-        <Label htmlFor="notes">Notes</Label>
+        <Label htmlFor="notes">Notes *</Label>
         <Textarea
           id="notes"
           value={formData.notes}
           onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
           rows={3}
           placeholder="Additional notes or instructions"
+          required
         />
       </div>
 

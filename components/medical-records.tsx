@@ -2,7 +2,7 @@
 
 import type React from "react"
 
-import { useState, useMemo, useEffect } from "react"
+import { useState, useMemo, useEffect, useCallback } from "react"
 import { API_BASE } from "@/lib/api"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -49,44 +49,45 @@ export function MedicalRecords() {
   const [isViewDialogOpen, setIsViewDialogOpen] = useState(false)
   const [currentView, setCurrentView] = useState<"records" | "prescriptions">("records")
 
-  useEffect(() => {
-    const fetchRecords = async () => {
-      try {
-        const res = await fetch(`${API_BASE}/records`)
-        if (res.ok) {
-          const data = await res.json()
-          setRecords(
-            data.map((r: any) => ({
-              id: r.id ?? "",
-              patientId: r.patientId ?? "",
-              patientName: "",
-              doctorId: "",
-              doctorName: "",
-              appointmentId: undefined,
-              date: r.createdAt ?? new Date().toISOString(),
-              type: "diagnosis",
-              title: "",
-              description: r.notes ?? "",
-              diagnosis: undefined,
-              symptoms: [],
-              treatment: undefined,
-              medications: [],
-              labResults: [],
-              attachments: [],
-              followUpRequired: false,
-              followUpDate: undefined,
-              status: "active",
-              createdAt: r.createdAt ?? new Date().toISOString(),
-              updatedAt: r.createdAt ?? new Date().toISOString(),
-            }))
-          )
-        }
-      } catch (err) {
-        console.error(err)
+  const fetchRecords = useCallback(async () => {
+    try {
+      const res = await fetch(`${API_BASE}/records`)
+      if (res.ok) {
+        const data = await res.json()
+        setRecords(
+          data.map((r: any) => ({
+            id: r.id ?? "",
+            patientId: r.patientId ?? "",
+            patientName: "",
+            doctorId: "",
+            doctorName: "",
+            appointmentId: undefined,
+            date: r.createdAt ?? new Date().toISOString(),
+            type: "diagnosis",
+            title: "",
+            description: r.notes ?? "",
+            diagnosis: undefined,
+            symptoms: [],
+            treatment: undefined,
+            medications: [],
+            labResults: [],
+            attachments: [],
+            followUpRequired: false,
+            followUpDate: undefined,
+            status: "active",
+            createdAt: r.createdAt ?? new Date().toISOString(),
+            updatedAt: r.createdAt ?? new Date().toISOString(),
+          }))
+        )
       }
+    } catch (err) {
+      console.error(err)
     }
-    fetchRecords()
   }, [])
+
+  useEffect(() => {
+    fetchRecords()
+  }, [fetchRecords])
 
   const filteredRecords = useMemo(() => {
     return records.filter((record) => {
@@ -190,14 +191,7 @@ export function MedicalRecords() {
         }),
       })
       if (res.ok) {
-        const saved = await res.json()
-        const record: MedicalRecord = {
-          ...newRecord,
-          id: saved.id,
-          createdAt: saved.createdAt ?? new Date().toISOString(),
-          updatedAt: saved.createdAt ?? new Date().toISOString(),
-        }
-        setRecords([...records, record])
+        await fetchRecords()
         setIsAddDialogOpen(false)
       }
     } catch (err) {
@@ -616,6 +610,23 @@ function AddMedicalRecordForm({
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
+    if (
+      !formData.patientId ||
+      !formData.doctorId ||
+      !formData.date ||
+      !formData.type ||
+      !formData.status ||
+      !formData.title ||
+      !formData.description ||
+      !formData.diagnosis ||
+      !formData.symptoms ||
+      !formData.treatment ||
+      (formData.followUpRequired && !formData.followUpDate)
+    ) {
+      alert("All fields are required")
+      return
+    }
+
     onSubmit({
       ...formData,
       symptoms: formData.symptoms ? formData.symptoms.split(",").map((s) => s.trim()) : [],
@@ -641,7 +652,7 @@ function AddMedicalRecordForm({
       <div className="grid grid-cols-2 gap-4">
         <div className="space-y-2">
           <Label htmlFor="patient">Patient *</Label>
-          <Select value={formData.patientId} onValueChange={handlePatientSelect}>
+          <Select value={formData.patientId} onValueChange={handlePatientSelect} required>
             <SelectTrigger>
               <SelectValue placeholder="Select patient" />
             </SelectTrigger>
@@ -656,7 +667,7 @@ function AddMedicalRecordForm({
         </div>
         <div className="space-y-2">
           <Label htmlFor="doctor">Doctor *</Label>
-          <Select value={formData.doctorId} onValueChange={handleDoctorSelect}>
+          <Select value={formData.doctorId} onValueChange={handleDoctorSelect} required>
             <SelectTrigger>
               <SelectValue placeholder="Select doctor" />
             </SelectTrigger>
@@ -687,6 +698,7 @@ function AddMedicalRecordForm({
           <Select
             value={formData.type}
             onValueChange={(value) => setFormData({ ...formData, type: value as MedicalRecordType })}
+            required
           >
             <SelectTrigger>
               <SelectValue placeholder="Select type" />
@@ -706,6 +718,7 @@ function AddMedicalRecordForm({
           <Select
             value={formData.status}
             onValueChange={(value) => setFormData({ ...formData, status: value as MedicalRecordStatus })}
+            required
           >
             <SelectTrigger>
               <SelectValue />
@@ -745,33 +758,36 @@ function AddMedicalRecordForm({
 
       <div className="grid grid-cols-2 gap-4">
         <div className="space-y-2">
-          <Label htmlFor="diagnosis">Diagnosis</Label>
+          <Label htmlFor="diagnosis">Diagnosis *</Label>
           <Input
             id="diagnosis"
             value={formData.diagnosis}
             onChange={(e) => setFormData({ ...formData, diagnosis: e.target.value })}
             placeholder="Medical diagnosis"
+            required
           />
         </div>
         <div className="space-y-2">
-          <Label htmlFor="symptoms">Symptoms (comma-separated)</Label>
+          <Label htmlFor="symptoms">Symptoms (comma-separated) *</Label>
           <Input
             id="symptoms"
             value={formData.symptoms}
             onChange={(e) => setFormData({ ...formData, symptoms: e.target.value })}
             placeholder="e.g., Fever, Headache, Nausea"
+            required
           />
         </div>
       </div>
 
       <div className="space-y-2">
-        <Label htmlFor="treatment">Treatment Plan</Label>
+        <Label htmlFor="treatment">Treatment Plan *</Label>
         <Textarea
           id="treatment"
           value={formData.treatment}
           onChange={(e) => setFormData({ ...formData, treatment: e.target.value })}
           rows={2}
           placeholder="Treatment plan and recommendations"
+          required
         />
       </div>
 
@@ -788,12 +804,13 @@ function AddMedicalRecordForm({
         </div>
         {formData.followUpRequired && (
           <div className="space-y-2">
-            <Label htmlFor="followUpDate">Follow-up Date</Label>
+            <Label htmlFor="followUpDate">Follow-up Date *</Label>
             <Input
               id="followUpDate"
               type="date"
               value={formData.followUpDate}
               onChange={(e) => setFormData({ ...formData, followUpDate: e.target.value })}
+              required
             />
           </div>
         )}

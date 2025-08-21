@@ -2,7 +2,7 @@
 
 import type React from "react"
 
-import { useState, useMemo, useEffect } from "react"
+import { useState, useMemo, useEffect, useCallback } from "react"
 import { API_BASE } from "@/lib/api"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -29,6 +29,39 @@ export function PatientManagement() {
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false)
   const [isViewDialogOpen, setIsViewDialogOpen] = useState(false)
 
+  const fetchPatients = useCallback(async () => {
+    try {
+      const res = await fetch(`${API_BASE}/patients`)
+      if (res.ok) {
+        const data = await res.json()
+        setPatients(
+          data.map((p: any) => ({
+            id: p.id ?? "",
+            name: p.name ?? "",
+            age: p.dateOfBirth
+              ? new Date().getFullYear() - new Date(p.dateOfBirth).getFullYear()
+              : 0,
+            gender: "other",
+            contact: "",
+            email: "",
+            address: "",
+            emergencyContact: "",
+            status: "active",
+            admissionDate: undefined,
+            department: "",
+            assignedDoctor: "",
+            medicalHistory: [],
+            allergies: [],
+            bloodType: "",
+            insurance: "",
+          }))
+        )
+      }
+    } catch (err) {
+      console.error(err)
+    }
+  }, [])
+
   const filteredPatients = useMemo(() => {
     return patients.filter((patient) => {
       const matchesSearch =
@@ -43,40 +76,8 @@ export function PatientManagement() {
   }, [patients, searchTerm, statusFilter])
 
   useEffect(() => {
-    const fetchPatients = async () => {
-      try {
-        const res = await fetch(`${API_BASE}/patients`)
-        if (res.ok) {
-          const data = await res.json()
-          setPatients(
-            data.map((p: any) => ({
-              id: p.id ?? "",
-              name: p.name ?? "",
-              age: p.dateOfBirth
-                ? new Date().getFullYear() - new Date(p.dateOfBirth).getFullYear()
-                : 0,
-              gender: "other",
-              contact: "",
-              email: "",
-              address: "",
-              emergencyContact: "",
-              status: "active",
-              admissionDate: undefined,
-              department: "",
-              assignedDoctor: "",
-              medicalHistory: [],
-              allergies: [],
-              bloodType: "",
-              insurance: "",
-            }))
-          )
-        }
-      } catch (err) {
-        console.error(err)
-      }
-    }
     fetchPatients()
-  }, [])
+  }, [fetchPatients])
 
   const getStatusColor = (status: PatientStatus) => {
     switch (status) {
@@ -103,9 +104,7 @@ export function PatientManagement() {
         body: JSON.stringify({ name: newPatient.name, dateOfBirth: dob.toISOString() }),
       })
       if (res.ok) {
-        const saved = await res.json()
-        const patient: Patient = { ...newPatient, id: saved.id }
-        setPatients([...patients, patient])
+        await fetchPatients()
         setIsAddDialogOpen(false)
       }
     } catch (err) {
@@ -292,6 +291,23 @@ function AddPatientForm({ onSubmit }: { onSubmit: (patient: Omit<Patient, "id">)
       return
     }
 
+    if (
+      !formData.name ||
+      !formData.age ||
+      !formData.gender ||
+      !formData.contact ||
+      !formData.email ||
+      !formData.address ||
+      !formData.emergencyContact ||
+      !formData.department ||
+      !formData.bloodType ||
+      !formData.allergies ||
+      !formData.insurance
+    ) {
+      alert("All fields are required")
+      return
+    }
+
     onSubmit({
       ...formData,
       age: ageValue,
@@ -330,6 +346,7 @@ function AddPatientForm({ onSubmit }: { onSubmit: (patient: Omit<Patient, "id">)
           <Select
             value={formData.gender}
             onValueChange={(value) => setFormData({ ...formData, gender: value as Patient["gender"] })}
+            required
           >
             <SelectTrigger>
               <SelectValue placeholder="Select gender" />
@@ -354,40 +371,44 @@ function AddPatientForm({ onSubmit }: { onSubmit: (patient: Omit<Patient, "id">)
 
       <div className="grid grid-cols-2 gap-4">
         <div className="space-y-2">
-          <Label htmlFor="email">Email</Label>
+          <Label htmlFor="email">Email *</Label>
           <Input
             id="email"
             type="email"
             value={formData.email}
             onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+            required
           />
         </div>
         <div className="space-y-2">
-          <Label htmlFor="emergencyContact">Emergency Contact</Label>
+          <Label htmlFor="emergencyContact">Emergency Contact *</Label>
           <Input
             id="emergencyContact"
             value={formData.emergencyContact}
             onChange={(e) => setFormData({ ...formData, emergencyContact: e.target.value })}
+            required
           />
         </div>
       </div>
 
       <div className="space-y-2">
-        <Label htmlFor="address">Address</Label>
+        <Label htmlFor="address">Address *</Label>
         <Textarea
           id="address"
           value={formData.address}
           onChange={(e) => setFormData({ ...formData, address: e.target.value })}
           rows={2}
+          required
         />
       </div>
 
       <div className="grid grid-cols-3 gap-4">
         <div className="space-y-2">
-          <Label htmlFor="status">Status</Label>
+          <Label htmlFor="status">Status *</Label>
           <Select
             value={formData.status}
             onValueChange={(value) => setFormData({ ...formData, status: value as PatientStatus })}
+            required
           >
             <SelectTrigger>
               <SelectValue />
@@ -401,39 +422,43 @@ function AddPatientForm({ onSubmit }: { onSubmit: (patient: Omit<Patient, "id">)
           </Select>
         </div>
         <div className="space-y-2">
-          <Label htmlFor="department">Department</Label>
+          <Label htmlFor="department">Department *</Label>
           <Input
             id="department"
             value={formData.department}
             onChange={(e) => setFormData({ ...formData, department: e.target.value })}
+            required
           />
         </div>
         <div className="space-y-2">
-          <Label htmlFor="bloodType">Blood Type</Label>
+          <Label htmlFor="bloodType">Blood Type *</Label>
           <Input
             id="bloodType"
             value={formData.bloodType}
             onChange={(e) => setFormData({ ...formData, bloodType: e.target.value })}
+            required
           />
         </div>
       </div>
 
       <div className="grid grid-cols-2 gap-4">
         <div className="space-y-2">
-          <Label htmlFor="allergies">Allergies (comma-separated)</Label>
+          <Label htmlFor="allergies">Allergies (comma-separated) *</Label>
           <Input
             id="allergies"
             value={formData.allergies}
             onChange={(e) => setFormData({ ...formData, allergies: e.target.value })}
             placeholder="e.g., Penicillin, Latex"
+            required
           />
         </div>
         <div className="space-y-2">
-          <Label htmlFor="insurance">Insurance</Label>
+          <Label htmlFor="insurance">Insurance *</Label>
           <Input
             id="insurance"
             value={formData.insurance}
             onChange={(e) => setFormData({ ...formData, insurance: e.target.value })}
+            required
           />
         </div>
       </div>

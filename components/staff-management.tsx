@@ -2,7 +2,7 @@
 
 import type React from "react"
 
-import { useState, useMemo, useEffect } from "react"
+import { useState, useMemo, useEffect, useCallback } from "react"
 import { API_BASE } from "@/lib/api"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -30,6 +30,37 @@ export function StaffManagement() {
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false)
   const [isViewDialogOpen, setIsViewDialogOpen] = useState(false)
 
+  const fetchStaff = useCallback(async () => {
+    try {
+      const res = await fetch(`${API_BASE}/staff`)
+      if (res.ok) {
+        const data = await res.json()
+        setStaff(
+          data.map((s: any) => ({
+            id: s.id ?? "",
+            name: s.name ?? "",
+            email: "",
+            phone: "",
+            role: s.role ?? "doctor",
+            department: "",
+            specialization: undefined,
+            licenseNumber: undefined,
+            hireDate: new Date().toISOString(),
+            status: "active",
+            shift: undefined,
+            address: "",
+            emergencyContact: "",
+            qualifications: [],
+            experience: undefined,
+            salary: undefined,
+          }))
+        )
+      }
+    } catch (err) {
+      console.error(err)
+    }
+  }, [])
+
   const filteredStaff = useMemo(() => {
     return staff.filter((member) => {
       const matchesSearch =
@@ -46,38 +77,8 @@ export function StaffManagement() {
   }, [staff, searchTerm, roleFilter, statusFilter])
 
   useEffect(() => {
-    const fetchStaff = async () => {
-      try {
-        const res = await fetch(`${API_BASE}/staff`)
-        if (res.ok) {
-          const data = await res.json()
-          setStaff(
-            data.map((s: any) => ({
-              id: s.id ?? "",
-              name: s.name ?? "",
-              email: "",
-              phone: "",
-              role: s.role ?? "doctor",
-              department: "",
-              specialization: undefined,
-              licenseNumber: undefined,
-              hireDate: new Date().toISOString(),
-              status: "active",
-              shift: undefined,
-              address: "",
-              emergencyContact: "",
-              qualifications: [],
-              experience: undefined,
-              salary: undefined,
-            }))
-          )
-        }
-      } catch (err) {
-        console.error(err)
-      }
-    }
     fetchStaff()
-  }, [])
+  }, [fetchStaff])
 
   const getRoleColor = (role: StaffRole) => {
     switch (role) {
@@ -117,9 +118,7 @@ export function StaffManagement() {
         body: JSON.stringify({ name: newStaff.name, role: newStaff.role }),
       })
       if (res.ok) {
-        const saved = await res.json()
-        const staffMember: Staff = { ...newStaff, id: saved.id }
-        setStaff([...staff, staffMember])
+        await fetchStaff()
         setIsAddDialogOpen(false)
       }
     } catch (err) {
@@ -331,6 +330,27 @@ function AddStaffForm({ onSubmit }: { onSubmit: (staff: Omit<Staff, "id">) => vo
       return
     }
 
+    if (
+      !formData.name ||
+      !formData.email ||
+      !formData.phone ||
+      !formData.role ||
+      !formData.department ||
+      !formData.specialization ||
+      !formData.licenseNumber ||
+      !formData.hireDate ||
+      !formData.status ||
+      !formData.shift ||
+      !formData.address ||
+      !formData.emergencyContact ||
+      !formData.qualifications ||
+      !formData.experience ||
+      !formData.salary
+    ) {
+      alert("All fields are required")
+      return
+    }
+
     onSubmit({
       ...formData,
       experience: experienceValue,
@@ -404,22 +424,24 @@ function AddStaffForm({ onSubmit }: { onSubmit: (staff: Omit<Staff, "id">) => vo
           />
         </div>
         <div className="space-y-2">
-          <Label htmlFor="specialization">Specialization</Label>
+          <Label htmlFor="specialization">Specialization *</Label>
           <Input
             id="specialization"
             value={formData.specialization}
             onChange={(e) => setFormData({ ...formData, specialization: e.target.value })}
+            required
           />
         </div>
       </div>
 
       <div className="grid grid-cols-2 gap-4">
         <div className="space-y-2">
-          <Label htmlFor="licenseNumber">License Number</Label>
+          <Label htmlFor="licenseNumber">License Number *</Label>
           <Input
             id="licenseNumber"
             value={formData.licenseNumber}
             onChange={(e) => setFormData({ ...formData, licenseNumber: e.target.value })}
+            required
           />
         </div>
         <div className="space-y-2">
@@ -436,10 +458,11 @@ function AddStaffForm({ onSubmit }: { onSubmit: (staff: Omit<Staff, "id">) => vo
 
       <div className="grid grid-cols-3 gap-4">
         <div className="space-y-2">
-          <Label htmlFor="status">Status</Label>
+          <Label htmlFor="status">Status *</Label>
           <Select
             value={formData.status}
             onValueChange={(value) => setFormData({ ...formData, status: value as StaffStatus })}
+            required
           >
             <SelectTrigger>
               <SelectValue />
@@ -452,10 +475,11 @@ function AddStaffForm({ onSubmit }: { onSubmit: (staff: Omit<Staff, "id">) => vo
           </Select>
         </div>
         <div className="space-y-2">
-          <Label htmlFor="shift">Shift</Label>
+          <Label htmlFor="shift">Shift *</Label>
           <Select
             value={formData.shift || ""}
             onValueChange={(value) => setFormData({ ...formData, shift: value as Staff["shift"] })}
+            required
           >
             <SelectTrigger>
               <SelectValue placeholder="Select shift" />
@@ -469,53 +493,58 @@ function AddStaffForm({ onSubmit }: { onSubmit: (staff: Omit<Staff, "id">) => vo
           </Select>
         </div>
         <div className="space-y-2">
-          <Label htmlFor="experience">Experience (years)</Label>
+          <Label htmlFor="experience">Experience (years) *</Label>
           <Input
             id="experience"
             type="number"
             value={formData.experience}
             onChange={(e) => setFormData({ ...formData, experience: e.target.value })}
+            required
           />
         </div>
       </div>
 
       <div className="space-y-2">
-        <Label htmlFor="address">Address</Label>
+        <Label htmlFor="address">Address *</Label>
         <Textarea
           id="address"
           value={formData.address}
           onChange={(e) => setFormData({ ...formData, address: e.target.value })}
           rows={2}
+          required
         />
       </div>
 
       <div className="grid grid-cols-2 gap-4">
         <div className="space-y-2">
-          <Label htmlFor="emergencyContact">Emergency Contact</Label>
+          <Label htmlFor="emergencyContact">Emergency Contact *</Label>
           <Input
             id="emergencyContact"
             value={formData.emergencyContact}
             onChange={(e) => setFormData({ ...formData, emergencyContact: e.target.value })}
+            required
           />
         </div>
         <div className="space-y-2">
-          <Label htmlFor="salary">Salary</Label>
+          <Label htmlFor="salary">Salary *</Label>
           <Input
             id="salary"
             type="number"
             value={formData.salary}
             onChange={(e) => setFormData({ ...formData, salary: e.target.value })}
+            required
           />
         </div>
       </div>
 
       <div className="space-y-2">
-        <Label htmlFor="qualifications">Qualifications (comma-separated)</Label>
+        <Label htmlFor="qualifications">Qualifications (comma-separated) *</Label>
         <Input
           id="qualifications"
           value={formData.qualifications}
           onChange={(e) => setFormData({ ...formData, qualifications: e.target.value })}
           placeholder="e.g., MD, Board Certified, Fellowship"
+          required
         />
       </div>
 
