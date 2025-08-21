@@ -50,10 +50,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         localStorage.setItem("hms_user", JSON.stringify(loggedIn))
         return true
       }
-      return false
+    } catch (err) {
+      console.error(err)
     } finally {
       setIsLoading(false)
     }
+    return false
   }
 
   const signup = async (name: string, email: string, password: string): Promise<boolean> => {
@@ -70,10 +72,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         localStorage.setItem("hms_user", JSON.stringify(newUser))
         return true
       }
-      return false
+    } catch (err) {
+      console.error(err)
     } finally {
       setIsLoading(false)
     }
+    return false
   }
 
   const logout = () => {
