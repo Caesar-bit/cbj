@@ -15,36 +15,12 @@ export interface User {
 interface AuthContextType {
   user: User | null
   login: (email: string, password: string) => Promise<boolean>
+  signup: (name: string, email: string, password: string) => Promise<boolean>
   logout: () => void
   isLoading: boolean
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
-
-// Mock users for demonstration
-const mockUsers: User[] = [
-  {
-    id: "1",
-    name: "Dr. Sarah Johnson",
-    email: "sarah.johnson@hospital.com",
-    role: "doctor",
-    department: "Cardiology",
-  },
-  {
-    id: "2",
-    name: "Nurse Mary Wilson",
-    email: "mary.wilson@hospital.com",
-    role: "nurse",
-    department: "Emergency",
-  },
-  {
-    id: "3",
-    name: "Admin John Smith",
-    email: "admin@hospital.com",
-    role: "admin",
-    department: "Administration",
-  },
-]
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null)
@@ -61,22 +37,42 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const login = async (email: string, password: string): Promise<boolean> => {
     setIsLoading(true)
-
-    // Simulate API call delay
-    await new Promise((resolve) => setTimeout(resolve, 1000))
-
-    // Mock authentication - in real app, this would be an API call
-    const foundUser = mockUsers.find((u) => u.email === email)
-
-    if (foundUser && password === "password123") {
-      setUser(foundUser)
-      localStorage.setItem("hms_user", JSON.stringify(foundUser))
+    try {
+      const res = await fetch("http://localhost:5000/api/auth/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password }),
+      })
+      if (res.ok) {
+        const loggedIn = await res.json()
+        setUser(loggedIn)
+        localStorage.setItem("hms_user", JSON.stringify(loggedIn))
+        return true
+      }
+      return false
+    } finally {
       setIsLoading(false)
-      return true
     }
+  }
 
-    setIsLoading(false)
-    return false
+  const signup = async (name: string, email: string, password: string): Promise<boolean> => {
+    setIsLoading(true)
+    try {
+      const res = await fetch("http://localhost:5000/api/auth/register", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name, email, password }),
+      })
+      if (res.ok) {
+        const newUser = await res.json()
+        setUser(newUser)
+        localStorage.setItem("hms_user", JSON.stringify(newUser))
+        return true
+      }
+      return false
+    } finally {
+      setIsLoading(false)
+    }
   }
 
   const logout = () => {
@@ -84,7 +80,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     localStorage.removeItem("hms_user")
   }
 
-  return <AuthContext.Provider value={{ user, login, logout, isLoading }}>{children}</AuthContext.Provider>
+  return <AuthContext.Provider value={{ user, login, signup, logout, isLoading }}>{children}</AuthContext.Provider>
 }
 
 export function useAuth() {

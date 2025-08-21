@@ -10,10 +10,6 @@ import { PatientManagement } from "@/components/patient-management"
 import { StaffManagement } from "@/components/staff-management"
 import { AppointmentManagement } from "@/components/appointment-management"
 import { MedicalRecords } from "@/components/medical-records"
-import { mockPatients } from "@/lib/patient-data"
-import { mockStaff } from "@/lib/staff-data"
-import { mockAppointments } from "@/lib/appointment-data"
-import { mockMedicalRecords } from "@/lib/medical-record-data"
 
 type DashboardView = "overview" | "patients" | "staff" | "appointments" | "records"
 
@@ -29,22 +25,18 @@ export function Dashboard() {
   })
 
   useEffect(() => {
-    const updateCounts = () => {
-      const today = new Date().toISOString().split("T")[0]
-      const todayAppointments = mockAppointments.filter((apt) => apt.date === today)
-
-      setCounts({
-        patients: mockPatients.length,
-        staff: mockStaff.filter((s) => s.status === "active").length,
-        appointments: mockAppointments.length,
-        todayAppointments: todayAppointments.length,
-        records: mockMedicalRecords.length,
-      })
+    const fetchCounts = async () => {
+      try {
+        const res = await fetch("http://localhost:5000/api/dashboard")
+        if (res.ok) {
+          const data = await res.json()
+          setCounts(data)
+        }
+      } catch (err) {
+        console.error(err)
+      }
     }
-
-    updateCounts()
-    const interval = setInterval(updateCounts, 1000)
-    return () => clearInterval(interval)
+    fetchCounts()
   }, [])
 
   const getRoleColor = (role: string) => {

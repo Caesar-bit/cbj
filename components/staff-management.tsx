@@ -2,7 +2,7 @@
 
 import type React from "react"
 
-import { useState, useMemo } from "react"
+import { useState, useMemo, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -20,10 +20,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea"
 import { Search, Plus, Edit, Eye, Phone, Mail, UserCheck, Clock, Award } from "lucide-react"
 import type { Staff, StaffRole, StaffStatus } from "@/types/staff"
-import { mockStaff } from "@/lib/staff-data"
-
 export function StaffManagement() {
-  const [staff, setStaff] = useState<Staff[]>(mockStaff)
+  const [staff, setStaff] = useState<Staff[]>([])
   const [searchTerm, setSearchTerm] = useState("")
   const [roleFilter, setRoleFilter] = useState<StaffRole | "all">("all")
   const [statusFilter, setStatusFilter] = useState<StaffStatus | "all">("all")
@@ -45,6 +43,20 @@ export function StaffManagement() {
       return matchesSearch && matchesRole && matchesStatus
     })
   }, [staff, searchTerm, roleFilter, statusFilter])
+
+  useEffect(() => {
+    const fetchStaff = async () => {
+      try {
+        const res = await fetch("http://localhost:5000/api/staff")
+        if (res.ok) {
+          setStaff(await res.json())
+        }
+      } catch (err) {
+        console.error(err)
+      }
+    }
+    fetchStaff()
+  }, [])
 
   const getRoleColor = (role: StaffRole) => {
     switch (role) {

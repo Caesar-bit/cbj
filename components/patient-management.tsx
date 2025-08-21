@@ -2,7 +2,7 @@
 
 import type React from "react"
 
-import { useState, useMemo } from "react"
+import { useState, useMemo, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -20,10 +20,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea"
 import { Search, Plus, Edit, Eye, Phone, Mail, AlertCircle } from "lucide-react"
 import type { Patient, PatientStatus } from "@/types/patient"
-import { mockPatients } from "@/lib/patient-data"
-
 export function PatientManagement() {
-  const [patients, setPatients] = useState<Patient[]>(mockPatients)
+  const [patients, setPatients] = useState<Patient[]>([])
   const [searchTerm, setSearchTerm] = useState("")
   const [statusFilter, setStatusFilter] = useState<PatientStatus | "all">("all")
   const [selectedPatient, setSelectedPatient] = useState<Patient | null>(null)
@@ -42,6 +40,20 @@ export function PatientManagement() {
       return matchesSearch && matchesStatus
     })
   }, [patients, searchTerm, statusFilter])
+
+  useEffect(() => {
+    const fetchPatients = async () => {
+      try {
+        const res = await fetch("http://localhost:5000/api/patients")
+        if (res.ok) {
+          setPatients(await res.json())
+        }
+      } catch (err) {
+        console.error(err)
+      }
+    }
+    fetchPatients()
+  }, [])
 
   const getStatusColor = (status: PatientStatus) => {
     switch (status) {

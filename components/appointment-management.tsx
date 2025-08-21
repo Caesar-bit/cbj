@@ -2,7 +2,7 @@
 
 import type React from "react"
 
-import { useState, useMemo } from "react"
+import { useState, useMemo, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -33,12 +33,11 @@ import {
   AlertCircle,
 } from "lucide-react"
 import type { Appointment, AppointmentType, AppointmentStatus } from "@/types/appointment"
-import { mockAppointments } from "@/lib/appointment-data"
-import { mockPatients } from "@/lib/patient-data"
-import { mockStaff } from "@/lib/staff-data"
+import type { Patient } from "@/types/patient"
+import type { Staff } from "@/types/staff"
 
 export function AppointmentManagement() {
-  const [appointments, setAppointments] = useState<Appointment[]>(mockAppointments)
+  const [appointments, setAppointments] = useState<Appointment[]>([])
   const [searchTerm, setSearchTerm] = useState("")
   const [statusFilter, setStatusFilter] = useState<AppointmentStatus | "all">("all")
   const [typeFilter, setTypeFilter] = useState<AppointmentType | "all">("all")
@@ -410,8 +409,29 @@ function AddAppointmentForm({
     notes: "",
   })
 
-  const doctors = mockStaff.filter((staff) => staff.role === "doctor")
-  const patients = mockPatients
+  const [patients, setPatients] = useState<Patient[]>([])
+  const [doctors, setDoctors] = useState<Staff[]>([])
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const [aptRes, patRes, docRes] = await Promise.all([
+          fetch("http://localhost:5000/api/appointments"),
+          fetch("http://localhost:5000/api/patients"),
+          fetch("http://localhost:5000/api/staff"),
+        ])
+        if (aptRes.ok) setAppointments(await aptRes.json())
+        if (patRes.ok) setPatients(await patRes.json())
+        if (docRes.ok) {
+          const allStaff: Staff[] = await docRes.json()
+          setDoctors(allStaff.filter((s) => s.role === "doctor"))
+        }
+      } catch (err) {
+        console.error(err)
+      }
+    }
+    fetchData()
+  }, [])
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()

@@ -2,7 +2,7 @@
 
 import type React from "react"
 
-import { useState, useMemo } from "react"
+import { useState, useMemo, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -34,12 +34,11 @@ import {
   CheckCircle,
 } from "lucide-react"
 import type { MedicalRecord, MedicalRecordType, MedicalRecordStatus, Medication } from "@/types/medical-record"
-import { mockMedicalRecords } from "@/lib/medical-record-data"
-import { mockPatients } from "@/lib/patient-data"
-import { mockStaff } from "@/lib/staff-data"
+import type { Patient } from "@/types/patient"
+import type { Staff } from "@/types/staff"
 
 export function MedicalRecords() {
-  const [records, setRecords] = useState<MedicalRecord[]>(mockMedicalRecords)
+  const [records, setRecords] = useState<MedicalRecord[]>([])
   const [searchTerm, setSearchTerm] = useState("")
   const [typeFilter, setTypeFilter] = useState<MedicalRecordType | "all">("all")
   const [statusFilter, setStatusFilter] = useState<MedicalRecordStatus | "all">("all")
@@ -276,7 +275,7 @@ export function MedicalRecords() {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All Patients</SelectItem>
-                {mockPatients.map((patient) => (
+                {patients.map((patient) => (
                   <SelectItem key={patient.id} value={patient.id}>
                     {patient.name}
                   </SelectItem>
@@ -491,8 +490,29 @@ function AddMedicalRecordForm({
     status: "active" as MedicalRecordStatus,
   })
 
-  const doctors = mockStaff.filter((staff) => staff.role === "doctor")
-  const patients = mockPatients
+  const [patients, setPatients] = useState<Patient[]>([])
+  const [doctors, setDoctors] = useState<Staff[]>([])
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const [recRes, patRes, docRes] = await Promise.all([
+          fetch("http://localhost:5000/api/records"),
+          fetch("http://localhost:5000/api/patients"),
+          fetch("http://localhost:5000/api/staff"),
+        ])
+        if (recRes.ok) setRecords(await recRes.json())
+        if (patRes.ok) setPatients(await patRes.json())
+        if (docRes.ok) {
+          const allStaff: Staff[] = await docRes.json()
+          setDoctors(allStaff.filter((s) => s.role === "doctor"))
+        }
+      } catch (err) {
+        console.error(err)
+      }
+    }
+    fetchData()
+  }, [])
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
