@@ -3,6 +3,7 @@
 import type React from "react"
 
 import { useState, useMemo, useEffect } from "react"
+import { API_BASE } from "@/lib/api"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -47,7 +48,7 @@ export function StaffManagement() {
   useEffect(() => {
     const fetchStaff = async () => {
       try {
-        const res = await fetch("http://localhost:5000/api/staff")
+        const res = await fetch(`${API_BASE}/staff`)
         if (res.ok) {
           setStaff(await res.json())
         }

@@ -3,6 +3,7 @@
 import type React from "react"
 
 import { useState, useMemo, useEffect } from "react"
+import { API_BASE } from "@/lib/api"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -44,7 +45,7 @@ export function PatientManagement() {
   useEffect(() => {
     const fetchPatients = async () => {
       try {
-        const res = await fetch("http://localhost:5000/api/patients")
+        const res = await fetch(`${API_BASE}/patients`)
         if (res.ok) {
           setPatients(await res.json())
         }

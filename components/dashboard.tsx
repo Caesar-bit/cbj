@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
+import { API_BASE } from "@/lib/api"
 import { useAuth } from "@/components/auth-provider"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -27,7 +28,7 @@ export function Dashboard() {
   useEffect(() => {
     const fetchCounts = async () => {
       try {
-        const res = await fetch("http://localhost:5000/api/dashboard")
+        const res = await fetch(`${API_BASE}/dashboard`)
         if (res.ok) {
           const data = await res.json()
           setCounts(data)

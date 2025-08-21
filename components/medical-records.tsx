@@ -3,6 +3,7 @@
 import type React from "react"
 
 import { useState, useMemo, useEffect } from "react"
+import { API_BASE } from "@/lib/api"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -497,9 +498,9 @@ function AddMedicalRecordForm({
     const fetchData = async () => {
       try {
         const [recRes, patRes, docRes] = await Promise.all([
-          fetch("http://localhost:5000/api/records"),
-          fetch("http://localhost:5000/api/patients"),
-          fetch("http://localhost:5000/api/staff"),
+          fetch(`${API_BASE}/records`),
+          fetch(`${API_BASE}/patients`),
+          fetch(`${API_BASE}/staff`),
         ])
         if (recRes.ok) setRecords(await recRes.json())
         if (patRes.ok) setPatients(await patRes.json())

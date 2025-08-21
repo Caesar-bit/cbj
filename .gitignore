@@ -1,3 +1,5 @@
 node_modules/
 backend/bin/
 backend/obj/
+.env
+.env.local
