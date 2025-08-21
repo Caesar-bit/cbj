@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
+import { API_BASE } from "@/lib/api"
 import { useAuth } from "@/components/auth-provider"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -10,10 +11,6 @@ import { PatientManagement } from "@/components/patient-management"
 import { StaffManagement } from "@/components/staff-management"
 import { AppointmentManagement } from "@/components/appointment-management"
 import { MedicalRecords } from "@/components/medical-records"
-import { mockPatients } from "@/lib/patient-data"
-import { mockStaff } from "@/lib/staff-data"
-import { mockAppointments } from "@/lib/appointment-data"
-import { mockMedicalRecords } from "@/lib/medical-record-data"
 
 type DashboardView = "overview" | "patients" | "staff" | "appointments" | "records"
 
@@ -29,22 +26,18 @@ export function Dashboard() {
   })
 
   useEffect(() => {
-    const updateCounts = () => {
-      const today = new Date().toISOString().split("T")[0]
-      const todayAppointments = mockAppointments.filter((apt) => apt.date === today)
-
-      setCounts({
-        patients: mockPatients.length,
-        staff: mockStaff.filter((s) => s.status === "active").length,
-        appointments: mockAppointments.length,
-        todayAppointments: todayAppointments.length,
-        records: mockMedicalRecords.length,
-      })
+    const fetchCounts = async () => {
+      try {
+        const res = await fetch(`${API_BASE}/dashboard`)
+        if (res.ok) {
+          const data = await res.json()
+          setCounts(data)
+        }
+      } catch (err) {
+        console.error(err)
+      }
     }
-
-    updateCounts()
-    const interval = setInterval(updateCounts, 1000)
-    return () => clearInterval(interval)
+    fetchCounts()
   }, [])
 
   const getRoleColor = (role: string) => {
