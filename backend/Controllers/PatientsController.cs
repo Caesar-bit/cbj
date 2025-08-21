@@ -33,4 +33,14 @@ public class PatientsController : ControllerBase
         _db.SaveChanges();
         return CreatedAtAction(nameof(GetById), new { id = patient.Id }, patient);
     }
+
+    [HttpPut("{id}")]
+    public IActionResult Update(Guid id, Patient updated)
+    {
+        var patient = _db.Patients.Find(id);
+        if (patient is null) return NotFound();
+        _db.Entry(patient).CurrentValues.SetValues(updated);
+        _db.SaveChanges();
+        return Ok(patient);
+    }
 }

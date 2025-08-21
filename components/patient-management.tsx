@@ -71,17 +71,37 @@ export function PatientManagement() {
     }
   }
 
-  const handleAddPatient = (newPatient: Omit<Patient, "id">) => {
-    const patient: Patient = {
-      ...newPatient,
-      id: `P${String(patients.length + 1).padStart(3, "0")}`,
+  const handleAddPatient = async (newPatient: Omit<Patient, "id">) => {
+    try {
+      const res = await fetch(`${API_BASE}/patients`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(newPatient),
+      })
+      if (res.ok) {
+        const created = await res.json()
+        setPatients([...patients, created])
+      }
+    } catch (err) {
+      console.error(err)
     }
-    setPatients([...patients, patient])
     setIsAddDialogOpen(false)
   }
 
-  const handleUpdatePatient = (updatedPatient: Patient) => {
-    setPatients(patients.map((p) => (p.id === updatedPatient.id ? updatedPatient : p)))
+  const handleUpdatePatient = async (updatedPatient: Patient) => {
+    try {
+      const res = await fetch(`${API_BASE}/patients/${updatedPatient.id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(updatedPatient),
+      })
+      if (res.ok) {
+        const saved = await res.json()
+        setPatients(patients.map((p) => (p.id === saved.id ? saved : p)))
+      }
+    } catch (err) {
+      console.error(err)
+    }
     setSelectedPatient(null)
   }
 
@@ -235,7 +255,7 @@ export function PatientManagement() {
   )
 }
 
-function AddPatientForm({ onSubmit }: { onSubmit: (patient: Omit<Patient, "id">) => void }) {
+function AddPatientForm({ onSubmit }: { onSubmit: (patient: Omit<Patient, "id">) => Promise<void> }) {
   const [formData, setFormData] = useState({
     name: "",
     age: "",
@@ -251,7 +271,7 @@ function AddPatientForm({ onSubmit }: { onSubmit: (patient: Omit<Patient, "id">)
     insurance: "",
   })
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     const ageValue = Number.parseInt(formData.age)
     if (isNaN(ageValue) || ageValue < 0 || ageValue > 150) {
@@ -259,7 +279,7 @@ function AddPatientForm({ onSubmit }: { onSubmit: (patient: Omit<Patient, "id">)
       return
     }
 
-    onSubmit({
+    await onSubmit({
       ...formData,
       age: ageValue,
       allergies: formData.allergies ? formData.allergies.split(",").map((a) => a.trim()) : [],
@@ -418,7 +438,7 @@ function EditPatientForm({
   onCancel,
 }: {
   patient: Patient
-  onSubmit: (patient: Patient) => void
+  onSubmit: (patient: Patient) => Promise<void>
   onCancel: () => void
 }) {
   const [formData, setFormData] = useState({
@@ -427,7 +447,7 @@ function EditPatientForm({
     allergies: patient.allergies?.join(", ") || "",
   })
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     const ageValue = Number.parseInt(formData.age)
     if (isNaN(ageValue) || ageValue < 0 || ageValue > 150) {
@@ -435,7 +455,7 @@ function EditPatientForm({
       return
     }
 
-    onSubmit({
+    await onSubmit({
       ...formData,
       age: ageValue,
       allergies: formData.allergies ? formData.allergies.split(",").map((a) => a.trim()) : [],

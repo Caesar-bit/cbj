@@ -30,4 +30,7 @@ app.UseCors();
 
 app.MapControllers();
 
+// seed initial data
+SeedData.Initialize(app.Services);
+
 app.Run();
