@@ -2,3 +2,5 @@ node_modules/
 backend/bin/
 backend/obj/
 .env
+backend/app.db
+.next/
